@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { format, parseISO, isAfter, isBefore, startOfDay, subDays, differenceInCalendarDays } from "date-fns";
+import { format, parseISO, startOfDay, differenceInCalendarDays } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import SessionCard from "@/components/SessionCard";
 import WeekStrip, { buildWeek } from "@/components/WeekStrip";
 import RescheduleBanner from "./RescheduleBanner";
+import BonusSessionPrompt from "./BonusSessionPrompt";
+import { insertStrugglingTopicBoost, detectExamTomorrow, pickWeakestTopic } from "@/lib/adaptive";
 import type { Exam, Topic, StudySession } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +16,16 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
+  // Run adaptive boost first so today's plan reflects it.
+  const boost = await insertStrugglingTopicBoost(supabase, user.id);
+
   const today = startOfDay(new Date());
   const todayIso = format(today, "yyyy-MM-dd");
   const weekDays = buildWeek();
   const weekStart = format(weekDays[0], "yyyy-MM-dd");
   const weekEnd = format(weekDays[6], "yyyy-MM-dd");
 
-  const [{ data: exams }, { data: topics }, { data: sessions }, { data: missed }] = await Promise.all([
+  const [{ data: exams }, { data: topics }, { data: sessions }, { data: missed }, { data: allSessionsAllTime }] = await Promise.all([
     supabase.from("exams").select("*").eq("user_id", user.id),
     supabase.from("topics").select("*").eq("user_id", user.id),
     supabase.from("study_sessions").select("*")
@@ -30,48 +35,71 @@ export default async function DashboardPage() {
     supabase.from("study_sessions").select("id, scheduled_date")
       .eq("user_id", user.id).eq("completed", false).eq("skipped", false)
       .lt("scheduled_date", todayIso),
+    supabase.from("study_sessions").select("topic_id, ease_factor, completed, scheduled_date")
+      .eq("user_id", user.id),
   ]);
 
-  const examById = new Map<string, Exam>();
-  for (const e of (exams ?? []) as Exam[]) examById.set(e.id, e);
-  const topicById = new Map<string, Topic>();
-  for (const t of (topics ?? []) as Topic[]) topicById.set(t.id, t);
+  const examList = (exams ?? []) as Exam[];
+  const topicList = (topics ?? []) as Topic[];
+  const examById = new Map(examList.map((e) => [e.id, e]));
+  const topicById = new Map(topicList.map((t) => [t.id, t]));
 
   const allSessions = (sessions ?? []) as StudySession[];
   const todaySessions = allSessions.filter((s) => s.scheduled_date === todayIso && !s.completed && !s.skipped);
   const doneToday = allSessions.filter((s) => s.scheduled_date === todayIso && s.completed);
 
-  // Week strip data
   const weekInfo = weekDays.map((d) => {
     const key = format(d, "yyyy-MM-dd");
     const list = allSessions.filter((s) => s.scheduled_date === key);
-    return {
-      date: d,
-      scheduled: list.length,
-      completed: list.filter((s) => s.completed).length,
-    };
+    return { date: d, scheduled: list.length, completed: list.filter((s) => s.completed).length };
   });
 
-  // Upcoming exams (next 30 days) with confidence-based progress
-  const upcoming = ((exams ?? []) as Exam[])
+  const upcoming = examList
     .filter((e) => differenceInCalendarDays(parseISO(e.exam_date), today) >= 0)
     .sort((a, b) => parseISO(a.exam_date).getTime() - parseISO(b.exam_date).getTime())
     .slice(0, 4);
 
-  // For each upcoming exam, compute % of topics with avg ease > 2.0.
-  const { data: allSessionsAllTime } = await supabase
-    .from("study_sessions").select("topic_id, ease_factor, completed")
-    .eq("user_id", user.id);
   const easeByTopic = new Map<string, number[]>();
-  for (const s of (allSessionsAllTime ?? []) as Pick<StudySession, "topic_id" | "ease_factor" | "completed">[]) {
+  for (const s of allSessionsAllTime ?? []) {
     if (!s.completed) continue;
     const arr = easeByTopic.get(s.topic_id) ?? [];
     arr.push(s.ease_factor);
     easeByTopic.set(s.topic_id, arr);
   }
 
+  const examTomorrow = detectExamTomorrow(examList);
+
+  // Bonus prompt: morning, all done, weakest non-today topic exists.
+  const hour = new Date().getHours();
+  const isMorning = hour < 12;
+  let bonusTopic: Topic | null = null;
+  if (
+    isMorning && todaySessions.length === 0 && doneToday.length > 0
+  ) {
+    bonusTopic = pickWeakestTopic(
+      topicList,
+      (allSessionsAllTime ?? []) as StudySession[],
+      todayIso,
+    );
+  }
+
   return (
     <div className="space-y-8">
+      {boost.inserted > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          ⚠️ An exam is within a week. We&apos;ve added extra revision for {boost.inserted} topic
+          {boost.inserted === 1 ? "" : "s"} you found difficult: {boost.topicNames.slice(0, 3).join(", ")}
+          {boost.topicNames.length > 3 ? "…" : ""}.
+        </div>
+      )}
+
+      {examTomorrow && (
+        <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
+          🔥 <strong>{examTomorrow.exam.subject}</strong> is tomorrow. Consider a single quick-review
+          session covering every topic before you sleep.
+        </div>
+      )}
+
       {(missed ?? []).length > 0 && (
         <RescheduleBanner count={(missed ?? []).length} />
       )}
@@ -82,7 +110,10 @@ export default async function DashboardPage() {
         </h2>
         {todaySessions.length === 0 ? (
           doneToday.length > 0 ? (
-            <p className="mt-3 text-emerald-700">🎉 All done for today. Great work!</p>
+            <>
+              <p className="mt-3 text-emerald-700">🎉 All done for today. Great work!</p>
+              {bonusTopic && <BonusSessionPrompt topic={bonusTopic} examColor={examById.get(bonusTopic.exam_id)?.color ?? "#10B981"} />}
+            </>
           ) : (
             <p className="mt-3 text-slate-600">You&apos;re free today.</p>
           )
@@ -94,12 +125,9 @@ export default async function DashboardPage() {
               if (!topic || !exam) return null;
               return (
                 <SessionCard
-                  key={s.id}
-                  sessionId={s.id}
-                  subject={exam.subject}
-                  subjectColor={exam.color}
-                  topicName={topic.name}
-                  difficulty={topic.difficulty}
+                  key={s.id} sessionId={s.id}
+                  subject={exam.subject} subjectColor={exam.color}
+                  topicName={topic.name} difficulty={topic.difficulty}
                   reviewNumber={s.repetition_count + 1}
                 />
               );
@@ -115,7 +143,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {upcoming.map((exam) => {
-              const examTopics = ((topics ?? []) as Topic[]).filter((t) => t.exam_id === exam.id);
+              const examTopics = topicList.filter((t) => t.exam_id === exam.id);
               const confidentCount = examTopics.filter((t) => {
                 const eases = easeByTopic.get(t.id);
                 if (!eases || eases.length === 0) return false;
@@ -146,9 +174,7 @@ export default async function DashboardPage() {
 
       <section>
         <h2 className="text-lg font-semibold text-slate-900">This week</h2>
-        <div className="mt-3">
-          <WeekStrip days={weekInfo} />
-        </div>
+        <div className="mt-3"><WeekStrip days={weekInfo} /></div>
       </section>
     </div>
   );

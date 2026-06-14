@@ -21,6 +21,16 @@ export default async function ExamDetailPage({ params }: { params: { id: string 
     .eq("exam_id", exam.id).eq("user_id", user.id)
     .order("order_index", { ascending: true });
 
+  const topicIds = (topics ?? []).map((t) => t.id);
+  const { count: scheduledCount } = topicIds.length
+    ? await supabase
+        .from("study_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("completed", false)
+        .in("topic_id", topicIds)
+    : { count: 0 };
+  const hasSchedule = (scheduledCount ?? 0) > 0;
+
   const days = differenceInCalendarDays(parseISO(exam.exam_date), new Date());
 
   return (
@@ -36,7 +46,7 @@ export default async function ExamDetailPage({ params }: { params: { id: string 
       </div>
 
       <div className="mt-6">
-        <TopicEditor examId={exam.id} initial={(topics ?? []) as Topic[]} />
+        <TopicEditor examId={exam.id} initial={(topics ?? []) as Topic[]} hasSchedule={hasSchedule} />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import ExamCard from "@/components/ExamCard";
 import AddExamButton from "./AddExamButton";
@@ -59,8 +60,25 @@ export default async function ExamsPage() {
           <p className="mt-1 text-sm text-slate-500">Add your first exam to get started.</p>
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {examList.map((exam) => {
+        <>
+          {renderGroup("Upcoming", examList.filter(
+            (e) => differenceInCalendarDays(parseISO(e.exam_date), new Date()) >= 0,
+          ))}
+          {renderGroup("Past exams", examList.filter(
+            (e) => differenceInCalendarDays(parseISO(e.exam_date), new Date()) < 0,
+          ))}
+        </>
+      )}
+    </div>
+  );
+
+  function renderGroup(title: string, list: Exam[]) {
+    if (list.length === 0) return null;
+    return (
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((exam) => {
             const tIds = topicByExam.get(exam.id) ?? [];
             let total = 0, done = 0;
             for (const id of tIds) {
@@ -68,17 +86,10 @@ export default async function ExamsPage() {
               if (c) { total += c.total; done += c.done; }
             }
             const pct = total > 0 ? (done / total) * 100 : 0;
-            return (
-              <ExamCard
-                key={exam.id}
-                exam={exam}
-                topicCount={tIds.length}
-                completionPct={pct}
-              />
-            );
+            return <ExamCard key={exam.id} exam={exam} topicCount={tIds.length} completionPct={pct} />;
           })}
         </div>
-      )}
-    </div>
-  );
+      </section>
+    );
+  }
 }

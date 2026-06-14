@@ -1,7 +1,17 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
+import { generateScheduleForExam } from "@/lib/generateSchedule";
 import type { Topic, Difficulty } from "@/lib/supabase/types";
 
 const DIFF_LABELS: Record<Difficulty, string> = { 1: "Easy", 2: "Medium", 3: "Hard" };
@@ -11,13 +21,56 @@ const DIFF_CLS: Record<Difficulty, string> = {
   3: "bg-rose-100 text-rose-700",
 };
 
-export default function TopicEditor({ examId, initial }: { examId: string; initial: Topic[] }) {
+function SortableRow({ topic, idx, onDelete }: {
+  topic: Topic; idx: number; onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: topic.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center gap-3 py-2 bg-white">
+      <span {...attributes} {...listeners} className="cursor-grab select-none text-slate-300 hover:text-slate-500">⋮⋮</span>
+      <span className="text-slate-400 w-6 text-right text-sm">{idx + 1}.</span>
+      <span className="flex-1 text-slate-900">{topic.name}</span>
+      <span className={`rounded-full px-2 py-0.5 text-xs ${DIFF_CLS[topic.difficulty]}`}>
+        {DIFF_LABELS[topic.difficulty]}
+      </span>
+      <button onClick={() => onDelete(topic.id)} className="text-slate-400 hover:text-danger">✕</button>
+    </li>
+  );
+}
+
+export default function TopicEditor({
+  examId, initial, hasSchedule,
+}: { examId: string; initial: Topic[]; hasSchedule: boolean }) {
   const router = useRouter();
   const [topics, setTopics] = useState(initial);
   const [name, setName] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>(2);
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [regenPrompt, setRegenPrompt] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  async function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIdx = topics.findIndex((t) => t.id === active.id);
+    const newIdx = topics.findIndex((t) => t.id === over.id);
+    const reordered = arrayMove(topics, oldIdx, newIdx).map((t, i) => ({ ...t, order_index: i }));
+    setTopics(reordered);
+    const supabase = createClient();
+    await Promise.all(reordered.map((t) =>
+      supabase.from("topics").update({ order_index: t.order_index }).eq("id", t.id),
+    ));
+  }
 
   async function addTopic() {
     if (!name.trim()) return;
@@ -35,6 +88,7 @@ export default function TopicEditor({ examId, initial }: { examId: string; initi
     if (error || !data) return;
     setTopics([...topics, data]);
     setName(""); setNotes(""); setDifficulty(2);
+    if (hasSchedule) setRegenPrompt(true);
     router.refresh();
   }
 
@@ -45,43 +99,45 @@ export default function TopicEditor({ examId, initial }: { examId: string; initi
     router.refresh();
   }
 
-  async function move(id: string, dir: -1 | 1) {
-    const idx = topics.findIndex((t) => t.id === id);
-    const next = idx + dir;
-    if (next < 0 || next >= topics.length) return;
-    const reordered = [...topics];
-    [reordered[idx], reordered[next]] = [reordered[next], reordered[idx]];
-    const updated = reordered.map((t, i) => ({ ...t, order_index: i }));
-    setTopics(updated);
+  async function regenerate() {
+    setBusy(true);
     const supabase = createClient();
-    await Promise.all(
-      updated.map((t) =>
-        supabase.from("topics").update({ order_index: t.order_index }).eq("id", t.id),
-      ),
-    );
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await generateScheduleForExam(supabase, examId, user.id);
+    setRegenPrompt(false);
+    setBusy(false);
+    router.refresh();
   }
 
   return (
     <div className="space-y-4">
+      {regenPrompt && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          You added a topic to an exam that already has a schedule.
+          <div className="mt-2 flex gap-2">
+            <button onClick={regenerate} disabled={busy}
+              className="rounded-lg bg-warn px-3 py-1 text-white">Regenerate full schedule</button>
+            <button onClick={() => setRegenPrompt(false)} className="rounded-lg border border-amber-400 px-3 py-1">
+              Just add to next free slots
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="font-semibold text-slate-900">Topics</h2>
         {topics.length === 0 ? (
           <p className="mt-2 text-sm text-slate-500">No topics yet. Add one below.</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-100">
-            {topics.map((t, i) => (
-              <li key={t.id} className="flex items-center gap-3 py-2">
-                <span className="text-slate-400 w-6 text-right text-sm">{i + 1}.</span>
-                <span className="flex-1 text-slate-900">{t.name}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${DIFF_CLS[t.difficulty]}`}>
-                  {DIFF_LABELS[t.difficulty]}
-                </span>
-                <button onClick={() => move(t.id, -1)} className="text-slate-400 hover:text-slate-700">▲</button>
-                <button onClick={() => move(t.id, 1)} className="text-slate-400 hover:text-slate-700">▼</button>
-                <button onClick={() => deleteTopic(t.id)} className="text-slate-400 hover:text-danger">✕</button>
-              </li>
-            ))}
-          </ul>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={topics.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+              <ul className="mt-3 divide-y divide-slate-100">
+                {topics.map((t, i) => (
+                  <SortableRow key={t.id} topic={t} idx={i} onDelete={deleteTopic} />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
@@ -93,11 +149,11 @@ export default function TopicEditor({ examId, initial }: { examId: string; initi
             className="w-full rounded-lg border border-slate-300 px-3 py-2"
           />
           <div className="flex gap-2">
-            {(Object.keys(DIFF_LABELS) as unknown as Difficulty[]).map((d) => (
+            {([1, 2, 3] as Difficulty[]).map((d) => (
               <button
-                key={d} type="button" onClick={() => setDifficulty(Number(d) as Difficulty)}
+                key={d} type="button" onClick={() => setDifficulty(d)}
                 className={`rounded-lg px-3 py-1.5 text-sm ${
-                  difficulty === Number(d)
+                  difficulty === d
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 text-slate-700"
                 }`}

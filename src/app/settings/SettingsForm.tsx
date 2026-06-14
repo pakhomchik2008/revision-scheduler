@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { generateScheduleForExam } from "@/lib/generateSchedule";
 import type { UserSettings } from "@/lib/supabase/types";
 
 export default function SettingsForm({ initial, isFirstRun }: { initial: UserSettings; isFirstRun: boolean }) {
@@ -9,17 +10,40 @@ export default function SettingsForm({ initial, isFirstRun }: { initial: UserSet
   const [s, setS] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [askRegen, setAskRegen] = useState(false);
 
   async function save() {
-    setSaving(true);
-    setMsg(null);
-    const { error } = await createClient()
-      .from("user_settings")
-      .upsert(s, { onConflict: "user_id" });
+    setSaving(true); setMsg(null);
+    const supabase = createClient();
+    const hoursChanged = s.daily_study_hours !== initial.daily_study_hours
+      || s.include_weekends !== initial.include_weekends;
+    const { error } = await supabase
+      .from("user_settings").upsert(s, { onConflict: "user_id" });
     setSaving(false);
     if (error) return setMsg(error.message);
     setMsg("Saved.");
-    if (isFirstRun) router.push("/exams");
+    if (isFirstRun) return router.push("/exams");
+    if (hoursChanged) setAskRegen(true);
+    else router.refresh();
+  }
+
+  async function regenerateAll() {
+    setSaving(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return setSaving(false);
+    const { data: exams } = await supabase
+      .from("exams").select("id, exam_date").eq("user_id", user.id);
+    const future = (exams ?? []).filter(
+      (e: { exam_date: string }) => new Date(e.exam_date) > new Date(),
+    );
+    for (const e of future) {
+      try { await generateScheduleForExam(supabase, e.id, user.id); } catch {}
+    }
+    setSaving(false);
+    setAskRegen(false);
+    router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -65,6 +89,21 @@ export default function SettingsForm({ initial, isFirstRun }: { initial: UserSet
       >
         {saving ? "Saving…" : isFirstRun ? "Save & continue" : "Save"}
       </button>
+
+      {askRegen && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Your daily hours / weekend setting changed. Regenerate the schedule for all upcoming exams?
+          <div className="mt-2 flex gap-2">
+            <button onClick={regenerateAll} disabled={saving}
+              className="rounded-lg bg-warn px-3 py-1 text-white disabled:opacity-50">
+              Regenerate all
+            </button>
+            <button onClick={() => setAskRegen(false)} className="rounded-lg border border-amber-400 px-3 py-1">
+              Keep current schedule
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
