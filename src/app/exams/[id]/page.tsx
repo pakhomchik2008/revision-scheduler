@@ -3,6 +3,7 @@ import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import TopicEditor from "./TopicEditor";
 import GenerateScheduleButton from "./GenerateScheduleButton";
+import ExamActions from "./ExamActions";
 import type { Exam, Topic } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -35,14 +36,17 @@ export default async function ExamDetailPage({ params }: { params: { id: string 
 
   return (
     <div>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold text-slate-900" style={{ color: exam.color }}>{exam.subject}</h1>
           <p className="text-slate-500">
             {format(parseISO(exam.exam_date), "EEEE d MMMM yyyy")} — {days >= 0 ? `${days} days away` : "Past"}
           </p>
         </div>
-        <GenerateScheduleButton examId={exam.id} hasTopics={(topics ?? []).length > 0} />
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <ExamActions exam={exam} />
+          <GenerateScheduleButton examId={exam.id} hasTopics={(topics ?? []).length > 0} />
+        </div>
       </div>
 
       <div className="mt-6">

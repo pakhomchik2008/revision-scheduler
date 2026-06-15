@@ -5,6 +5,7 @@ import { addDays, format, parseISO, isBefore } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import RatingButtons from "@/components/RatingButtons";
 import { useI18n } from "@/components/I18nProvider";
+import { useToast } from "@/components/Toast";
 import { calculateNextReview } from "@/lib/sm2";
 import type { StudySession, Topic, Exam, Rating } from "@/lib/supabase/types";
 
@@ -15,6 +16,7 @@ export default function StudyClient({
 }: { session: StudySession; topic: Topic; exam: Exam }) {
   const router = useRouter();
   const { t } = useI18n();
+  const { toast } = useToast();
   const [seconds, setSeconds] = useState(0);
   const [showRating, setShowRating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,6 +31,19 @@ export default function StudyClient({
     }, 1000);
     return () => clearInterval(i);
   }, [showRating]);
+
+  async function cancelSession() {
+    if (!confirm(t.study_cancel_confirm)) return;
+    setSubmitting(true);
+    try {
+      const supabase = createClient();
+      await supabase.from("study_sessions").update({ skipped: true }).eq("id", session.id);
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setSubmitting(false);
+    }
+  }
 
   async function submit(rating: Rating) {
     setSubmitting(true);
@@ -58,10 +73,11 @@ export default function StudyClient({
           completed: false, skipped: false, repetition_count: newRepetitionCount, ease_factor: newEaseFactor,
         })));
       }
+      toast(t.toast_success);
       router.push("/dashboard");
       router.refresh();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed");
+      toast(e instanceof Error ? e.message : "Failed", "error");
       setSubmitting(false);
     }
   }
@@ -78,14 +94,20 @@ export default function StudyClient({
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <h1 className="text-3xl font-bold text-slate-900">{topic.name}</h1>
         {topic.notes && <p className="mt-4 whitespace-pre-wrap text-slate-600">{topic.notes}</p>}
-        <p className="mt-8 font-mono text-4xl text-slate-700">{mm}:{ss}</p>
+        <p className="mt-8 font-mono text-4xl text-slate-700" aria-label={`${mm} minutes ${ss} seconds`}>{mm}:{ss}</p>
         <p className="mt-1 text-xs text-slate-500">{t.study_auto_stop}</p>
       </div>
       {!showRating ? (
-        <button onClick={() => setShowRating(true)}
-          className="mt-6 w-full rounded-xl bg-primary py-4 text-lg font-semibold text-white">
-          {t.study_finished}
-        </button>
+        <div className="mt-6 flex gap-3">
+          <button onClick={() => setShowRating(true)}
+            className="flex-1 rounded-xl bg-primary py-4 text-lg font-semibold text-white">
+            {t.study_finished}
+          </button>
+          <button onClick={cancelSession} disabled={submitting}
+            className="rounded-xl border border-slate-300 px-6 py-4 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+            {t.study_cancel}
+          </button>
+        </div>
       ) : (
         <div className="mt-6">
           <p className="mb-3 text-center text-slate-700">{t.study_how_well}</p>

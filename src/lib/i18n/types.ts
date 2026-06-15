@@ -153,6 +153,41 @@ export interface Translations {
   progress_scheduled: string;
   progress_completed: string;
 
+  // Exam actions
+  exam_delete: string;
+  exam_delete_confirm: string;
+  exam_delete_warning: string;
+  exam_edit: string;
+  exam_edit_title: string;
+  exam_save: string;
+
+  // Topic editing
+  topic_edit: string;
+  topic_save: string;
+
+  // Study session
+  study_cancel: string;
+  study_cancel_confirm: string;
+
+  // Validation
+  validation_required: string;
+  validation_too_long: string;
+  validation_future_date: string;
+
+  // Toast / notifications
+  toast_success: string;
+  toast_error: string;
+  toast_deleted: string;
+  toast_updated: string;
+
+  // 404
+  not_found_title: string;
+  not_found_message: string;
+  not_found_go_home: string;
+
+  // Accessibility
+  skip_to_content: string;
+
   // Weekdays short
   mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string;
 }

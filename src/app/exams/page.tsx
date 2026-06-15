@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
-import ExamCard from "@/components/ExamCard";
 import AddExamButton from "./AddExamButton";
 import ExamsHeader from "./ExamsHeader";
+import ExamsList from "./ExamsList";
 import type { Exam, Topic, StudySession } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -48,49 +48,32 @@ export default async function ExamsPage() {
     completionByTopic.set(s.topic_id, c);
   }
 
+  // Compute completion data per exam
+  const examData = examList.map((exam) => {
+    const tIds = topicByExam.get(exam.id) ?? [];
+    let total = 0, done = 0;
+    for (const id of tIds) {
+      const c = completionByTopic.get(id);
+      if (c) { total += c.total; done += c.done; }
+    }
+    const pct = total > 0 ? (done / total) * 100 : 0;
+    return { exam, topicCount: tIds.length, completionPct: pct };
+  });
+
+  const upcoming = examData.filter(
+    (d) => differenceInCalendarDays(parseISO(d.exam.exam_date), new Date()) >= 0,
+  );
+  const past = examData.filter(
+    (d) => differenceInCalendarDays(parseISO(d.exam.exam_date), new Date()) < 0,
+  );
+
   return (
     <div>
       <div className="flex items-center justify-between">
         <ExamsHeader />
         <AddExamButton />
       </div>
-
-      {examList.length === 0 ? (
-        <div className="mt-16 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-          <p className="text-slate-600">No exams yet.</p>
-          <p className="mt-1 text-sm text-slate-500">Add your first exam to get started.</p>
-        </div>
-      ) : (
-        <>
-          {renderGroup("Upcoming", examList.filter(
-            (e) => differenceInCalendarDays(parseISO(e.exam_date), new Date()) >= 0,
-          ))}
-          {renderGroup("Past exams", examList.filter(
-            (e) => differenceInCalendarDays(parseISO(e.exam_date), new Date()) < 0,
-          ))}
-        </>
-      )}
+      <ExamsList upcoming={upcoming} past={past} hasExams={examList.length > 0} />
     </div>
   );
-
-  function renderGroup(title: string, list: Exam[]) {
-    if (list.length === 0) return null;
-    return (
-      <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((exam) => {
-            const tIds = topicByExam.get(exam.id) ?? [];
-            let total = 0, done = 0;
-            for (const id of tIds) {
-              const c = completionByTopic.get(id);
-              if (c) { total += c.total; done += c.done; }
-            }
-            const pct = total > 0 ? (done / total) * 100 : 0;
-            return <ExamCard key={exam.id} exam={exam} topicCount={tIds.length} completionPct={pct} />;
-          })}
-        </div>
-      </section>
-    );
-  }
 }

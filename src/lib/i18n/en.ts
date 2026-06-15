@@ -142,5 +142,33 @@ export const en: Translations = {
   progress_scheduled: "scheduled",
   progress_completed: "completed",
 
+  exam_delete: "Delete exam",
+  exam_delete_confirm: "Are you sure? This will delete the exam, all its topics, and all study sessions.",
+  exam_delete_warning: "This action cannot be undone.",
+  exam_edit: "Edit",
+  exam_edit_title: "Edit exam",
+  exam_save: "Save changes",
+
+  topic_edit: "Edit",
+  topic_save: "Save",
+
+  study_cancel: "Cancel session",
+  study_cancel_confirm: "Are you sure you want to cancel this study session?",
+
+  validation_required: "This field is required.",
+  validation_too_long: "Maximum 100 characters.",
+  validation_future_date: "Date must be in the future.",
+
+  toast_success: "Success",
+  toast_error: "Error",
+  toast_deleted: "Deleted successfully.",
+  toast_updated: "Updated successfully.",
+
+  not_found_title: "Page not found",
+  not_found_message: "The page you're looking for doesn't exist or has been moved.",
+  not_found_go_home: "Go to dashboard",
+
+  skip_to_content: "Skip to content",
+
   mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
 };
