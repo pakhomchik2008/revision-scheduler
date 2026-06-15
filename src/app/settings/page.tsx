@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SettingsForm from "./SettingsForm";
+import SettingsHeader from "./SettingsHeader";
 import type { UserSettings } from "@/lib/supabase/types";
 
 export default async function SettingsPage({
@@ -11,10 +12,7 @@ export default async function SettingsPage({
   if (!user) redirect("/auth/login");
 
   const { data } = await supabase
-    .from("user_settings")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle<UserSettings>();
+    .from("user_settings").select("*").eq("user_id", user.id).maybeSingle<UserSettings>();
 
   const initial: UserSettings = data ?? {
     user_id: user.id,
@@ -26,10 +24,7 @@ export default async function SettingsPage({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Settings</h1>
-      {searchParams.firstRun && (
-        <p className="mt-1 text-slate-600">Welcome! Set your study preferences to get started.</p>
-      )}
+      <SettingsHeader isFirstRun={!!searchParams.firstRun} />
       <SettingsForm initial={initial} isFirstRun={!!searchParams.firstRun} />
     </div>
   );

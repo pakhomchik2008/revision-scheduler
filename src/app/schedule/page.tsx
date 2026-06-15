@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CalendarView from "./CalendarView";
+import ScheduleHeader from "./ScheduleHeader";
 import type { Exam, Topic, StudySession } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,7 @@ export default async function SchedulePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Schedule</h1>
-      <p className="text-slate-500">All your study days at a glance.</p>
+      <ScheduleHeader />
       <div className="mt-4">
         <CalendarView
           exams={(exams ?? []) as Exam[]}

@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
+import { I18nProvider } from "@/components/I18nProvider";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -15,8 +16,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body>
-        {user ? <NavBar email={user.email ?? ""} /> : null}
-        <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+        <I18nProvider>
+          {user ? <NavBar email={user.email ?? ""} /> : null}
+          <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+        </I18nProvider>
       </body>
     </html>
   );

@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/components/I18nProvider";
 import type { Topic } from "@/lib/supabase/types";
 
 export default function BonusSessionPrompt({ topic, examColor }: { topic: Topic; examColor: string }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
 
   async function start() {
@@ -17,8 +19,7 @@ export default function BonusSessionPrompt({ topic, examColor }: { topic: Topic;
     const { data, error } = await supabase.from("study_sessions").insert({
       user_id: user.id, topic_id: topic.id,
       scheduled_date: format(startOfDay(new Date()), "yyyy-MM-dd"),
-      completed: false, skipped: false,
-      repetition_count: 0, ease_factor: 2.5,
+      completed: false, skipped: false, repetition_count: 0, ease_factor: 2.5,
     }).select("id").single<{ id: string }>();
     setBusy(false);
     if (error || !data) return;
@@ -28,12 +29,12 @@ export default function BonusSessionPrompt({ topic, examColor }: { topic: Topic;
   return (
     <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4">
       <p className="text-emerald-900">
-        ✨ Bonus session? Your weakest topic right now is{" "}
+        ✨ {t.dash_bonus_session} {t.dash_bonus_weakest}{" "}
         <strong style={{ color: examColor }}>{topic.name}</strong>.
       </p>
       <button onClick={start} disabled={busy}
         className="mt-2 rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
-        {busy ? "Loading…" : "Start bonus session"}
+        {busy ? t.dash_loading : t.dash_start_bonus}
       </button>
     </div>
   );

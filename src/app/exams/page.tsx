@@ -3,6 +3,7 @@ import { differenceInCalendarDays, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase/server";
 import ExamCard from "@/components/ExamCard";
 import AddExamButton from "./AddExamButton";
+import ExamsHeader from "./ExamsHeader";
 import type { Exam, Topic, StudySession } from "@/lib/supabase/types";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export default async function ExamsPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Your exams</h1>
+        <ExamsHeader />
         <AddExamButton />
       </div>
 

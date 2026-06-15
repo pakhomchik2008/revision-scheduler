@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, format, startOfDay } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { useI18n } from "@/components/I18nProvider";
 import type { UserSettings, StudySession } from "@/lib/supabase/types";
 
 export default function RescheduleBanner({ count }: { count: number }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -16,25 +18,20 @@ export default function RescheduleBanner({ count }: { count: number }) {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not signed in");
-
       const today = startOfDay(new Date());
       const todayIso = format(today, "yyyy-MM-dd");
-
       const { data: missed } = await supabase.from("study_sessions").select("id")
         .eq("user_id", user.id).eq("completed", false).eq("skipped", false)
         .lt("scheduled_date", todayIso);
-
       const { data: settings } = await supabase
         .from("user_settings").select("*").eq("user_id", user.id).single<UserSettings>();
       const dailyMax = settings?.daily_study_hours ?? 3;
-
       const { data: future } = await supabase.from("study_sessions").select("scheduled_date")
         .eq("user_id", user.id).eq("completed", false).gte("scheduled_date", todayIso);
       const usage = new Map<string, number>();
       for (const r of (future ?? []) as Pick<StudySession, "scheduled_date">[]) {
         usage.set(r.scheduled_date, (usage.get(r.scheduled_date) ?? 0) + 1);
       }
-
       let dayOffset = 0;
       for (const m of missed ?? []) {
         let placed = false;
@@ -49,14 +46,11 @@ export default function RescheduleBanner({ count }: { count: number }) {
           }
         }
       }
-
-      setMsg("Rescheduled.");
+      setMsg(t.dash_rescheduled);
       router.refresh();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
   async function dismiss() {
@@ -74,15 +68,17 @@ export default function RescheduleBanner({ count }: { count: number }) {
 
   return (
     <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-      <p className="text-amber-900 font-medium">You have {count} missed session{count === 1 ? "" : "s"}.</p>
+      <p className="text-amber-900 font-medium">
+        {count} {t.dash_missed_sessions}.
+      </p>
       <div className="mt-2 flex gap-2">
         <button onClick={reschedule} disabled={busy}
           className="rounded-lg bg-warn px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50">
-          {busy ? "Working…" : "Reschedule"}
+          {busy ? t.dash_working : t.dash_reschedule}
         </button>
         <button onClick={dismiss} disabled={busy}
           className="rounded-lg border border-amber-300 px-4 py-1.5 text-sm text-amber-900">
-          Dismiss
+          {t.dash_dismiss}
         </button>
       </div>
       {msg && <p className="mt-1 text-xs text-amber-700">{msg}</p>}

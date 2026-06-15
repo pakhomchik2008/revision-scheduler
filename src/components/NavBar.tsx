@@ -1,17 +1,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/schedule", label: "Schedule" },
-  { href: "/exams", label: "Exams" },
-  { href: "/progress", label: "Progress" },
-  { href: "/settings", label: "Settings" },
-];
+import { useI18n } from "./I18nProvider";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function NavBar({ email }: { email: string }) {
   const path = usePathname();
+  const { t } = useI18n();
+
+  const links = [
+    { href: "/dashboard", label: t.nav_dashboard },
+    { href: "/schedule", label: t.nav_schedule },
+    { href: "/exams", label: t.nav_exams },
+    { href: "/progress", label: t.nav_progress },
+    { href: "/settings", label: t.nav_settings },
+  ];
+
   return (
     <>
       <nav className="hidden border-b border-slate-200 bg-white md:block">
@@ -26,8 +30,11 @@ export default function NavBar({ email }: { email: string }) {
                 }`}
               >{l.label}</Link>
             ))}
+            <div className="ml-2 mr-1">
+              <LanguageSwitcher compact />
+            </div>
             <form action="/auth/logout" method="post">
-              <button className="ml-2 text-sm text-slate-500 hover:text-slate-900">Log out</button>
+              <button className="ml-1 text-sm text-slate-500 hover:text-slate-900">{t.nav_logout}</button>
             </form>
           </div>
         </div>
