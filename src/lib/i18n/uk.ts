@@ -142,5 +142,33 @@ export const uk: Translations = {
   progress_scheduled: "заплановано",
   progress_completed: "завершено",
 
+  exam_delete: "Видалити іспит",
+  exam_delete_confirm: "Ви впевнені? Це видалить іспит, усі теми та всі навчальні сесії.",
+  exam_delete_warning: "Цю дію неможливо скасувати.",
+  exam_edit: "Редагувати",
+  exam_edit_title: "Редагувати іспит",
+  exam_save: "Зберегти зміни",
+
+  topic_edit: "Ред.",
+  topic_save: "Зберегти",
+
+  study_cancel: "Скасувати сесію",
+  study_cancel_confirm: "Ви впевнені, що хочете скасувати цю навчальну сесію?",
+
+  validation_required: "Це поле обов'язкове.",
+  validation_too_long: "Максимум 100 символів.",
+  validation_future_date: "Дата має бути у майбутньому.",
+
+  toast_success: "Успішно",
+  toast_error: "Помилка",
+  toast_deleted: "Успішно видалено.",
+  toast_updated: "Успішно оновлено.",
+
+  not_found_title: "Сторінку не знайдено",
+  not_found_message: "Сторінка, яку ви шукаєте, не існує або була переміщена.",
+  not_found_go_home: "На головну",
+
+  skip_to_content: "Перейти до вмісту",
+
   mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Нд",
 };

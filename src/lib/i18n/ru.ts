@@ -142,5 +142,33 @@ export const ru: Translations = {
   progress_scheduled: "запланировано",
   progress_completed: "завершено",
 
+  exam_delete: "Удалить экзамен",
+  exam_delete_confirm: "Вы уверены? Это удалит экзамен, все темы и все учебные сессии.",
+  exam_delete_warning: "Это действие нельзя отменить.",
+  exam_edit: "Редактировать",
+  exam_edit_title: "Редактировать экзамен",
+  exam_save: "Сохранить изменения",
+
+  topic_edit: "Ред.",
+  topic_save: "Сохранить",
+
+  study_cancel: "Отменить сессию",
+  study_cancel_confirm: "Вы уверены, что хотите отменить эту учебную сессию?",
+
+  validation_required: "Это поле обязательно.",
+  validation_too_long: "Максимум 100 символов.",
+  validation_future_date: "Дата должна быть в будущем.",
+
+  toast_success: "Успешно",
+  toast_error: "Ошибка",
+  toast_deleted: "Успешно удалено.",
+  toast_updated: "Успешно обновлено.",
+
+  not_found_title: "Страница не найдена",
+  not_found_message: "Страница, которую вы ищете, не существует или была перемещена.",
+  not_found_go_home: "На главную",
+
+  skip_to_content: "Перейти к содержимому",
+
   mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Вс",
 };
