@@ -32,17 +32,24 @@ export default function LoginPage() {
         <LanguageSwitcher compact />
       </div>
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        <input
-          type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-          placeholder={t.auth_email_placeholder}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2"
-        />
-        <input
-          type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-          placeholder={t.auth_password_placeholder}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2"
-        />
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <div>
+          <label htmlFor="login-email" className="block text-sm font-medium text-slate-700">{t.auth_email_placeholder}</label>
+          <input
+            id="login-email"
+            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </div>
+        <div>
+          <label htmlFor="login-password" className="block text-sm font-medium text-slate-700">{t.auth_password_placeholder}</label>
+          <input
+            id="login-password"
+            type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </div>
+        {error && <p className="text-sm text-danger" role="alert">{error}</p>}
         <button disabled={loading} className="w-full rounded-lg bg-primary py-2 font-medium text-white disabled:opacity-50">
           {loading ? t.auth_logging_in : t.auth_login}
         </button>
