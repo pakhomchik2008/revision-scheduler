@@ -3,44 +3,49 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "./I18nProvider";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { LayoutDashboard, CalendarDays, BookOpen, BarChart3, Settings } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-const icons: Record<string, string> = {
-  "/dashboard": "&#127968;",
-  "/schedule": "&#128197;",
-  "/exams": "&#128218;",
-  "/progress": "&#128200;",
-  "/settings": "&#9881;",
-};
+const navItems: { href: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", icon: LayoutDashboard },
+  { href: "/schedule", icon: CalendarDays },
+  { href: "/exams", icon: BookOpen },
+  { href: "/progress", icon: BarChart3 },
+  { href: "/settings", icon: Settings },
+];
 
 export default function NavBar({ email }: { email: string }) {
   const path = usePathname();
   const { t } = useI18n();
 
-  const links = [
-    { href: "/dashboard", label: t.nav_dashboard },
-    { href: "/schedule", label: t.nav_schedule },
-    { href: "/exams", label: t.nav_exams },
-    { href: "/progress", label: t.nav_progress },
-    { href: "/settings", label: t.nav_settings },
-  ];
+  const labels: Record<string, string> = {
+    "/dashboard": t.nav_dashboard,
+    "/schedule": t.nav_schedule,
+    "/exams": t.nav_exams,
+    "/progress": t.nav_progress,
+    "/settings": t.nav_settings,
+  };
 
   return (
     <>
       {/* Desktop nav */}
       <nav className="hidden border-b border-slate-200 bg-white md:block" aria-label="Main navigation">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/dashboard" className="font-semibold text-slate-900" aria-label="Revision Scheduler home">
-            <span aria-hidden="true">&#128218;</span> Revision
+          <Link href="/dashboard" className="flex items-center gap-1.5 font-semibold text-slate-900" aria-label="Revision Scheduler home">
+            <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
+            Revision
           </Link>
           <div className="flex items-center gap-1">
-            {links.map((l) => (
+            {navItems.map(({ href, icon: Icon }) => (
               <Link
-                key={l.href} href={l.href}
+                key={href} href={href}
                 className={`rounded-md px-3 py-1.5 text-sm ${
-                  path?.startsWith(l.href) ? "bg-slate-100 text-slate-900 font-medium" : "text-slate-600 hover:bg-slate-50"
+                  path?.startsWith(href) ? "bg-slate-100 text-slate-900 font-medium" : "text-slate-600 hover:bg-slate-50"
                 }`}
-                aria-current={path?.startsWith(l.href) ? "page" : undefined}
-              >{l.label}</Link>
+                aria-current={path?.startsWith(href) ? "page" : undefined}
+              >
+                {labels[href]}
+              </Link>
             ))}
             <div className="ml-2 mr-1">
               <LanguageSwitcher compact />
@@ -55,16 +60,16 @@ export default function NavBar({ email }: { email: string }) {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200 bg-white md:hidden" aria-label="Mobile navigation">
         <div className="flex justify-around py-2">
-          {links.map((l) => (
+          {navItems.map(({ href, icon: Icon }) => (
             <Link
-              key={l.href} href={l.href}
+              key={href} href={href}
               className={`flex flex-col items-center gap-0.5 flex-1 text-center text-[10px] leading-tight py-1 ${
-                path?.startsWith(l.href) ? "text-primary font-semibold" : "text-slate-500"
+                path?.startsWith(href) ? "text-primary font-semibold" : "text-slate-500"
               }`}
-              aria-current={path?.startsWith(l.href) ? "page" : undefined}
+              aria-current={path?.startsWith(href) ? "page" : undefined}
             >
-              <span className="text-base" aria-hidden="true" dangerouslySetInnerHTML={{ __html: icons[l.href] || "" }} />
-              {l.label}
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {labels[href]}
             </Link>
           ))}
         </div>

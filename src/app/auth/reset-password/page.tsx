@@ -29,13 +29,26 @@ export default function ResetPasswordPage() {
     <div className="mx-auto mt-16 max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 className="text-2xl font-semibold text-slate-900">{t.auth_update_password}</h1>
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        <input type="password" required minLength={6} value={password}
-          onChange={(e) => setPassword(e.target.value)} placeholder={t.auth_new_password}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        <input type="password" required minLength={6} value={confirm}
-          onChange={(e) => setConfirm(e.target.value)} placeholder={t.auth_confirm_password}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2" />
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <div>
+          <label htmlFor="new-password" className="block text-sm font-medium text-slate-700">{t.auth_new_password}</label>
+          <input
+            id="new-password"
+            type="password" required minLength={6} value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+          <p className="mt-1 text-xs text-slate-500">{t.auth_min_chars}</p>
+        </div>
+        <div>
+          <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700">{t.auth_confirm_password}</label>
+          <input
+            id="confirm-password"
+            type="password" required minLength={6} value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
+        </div>
+        {error && <p className="text-sm text-danger" role="alert">{error}</p>}
         <button disabled={loading} className="w-full rounded-lg bg-primary py-2 font-medium text-white disabled:opacity-50">
           {loading ? t.auth_updating : t.auth_update_password}
         </button>
