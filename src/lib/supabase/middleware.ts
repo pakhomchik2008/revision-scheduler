@@ -29,7 +29,8 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPage = path.startsWith("/auth");
-  const isPublic = path === "/" || isAuthPage;
+  const PUBLIC_PATHS = ["/", "/about", "/privacy", "/terms", "/robots.txt", "/sitemap.xml", "/manifest.json", "/opengraph-image"];
+  const isPublic = isAuthPage || PUBLIC_PATHS.includes(path);
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
