@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import FeedbackWidget from "@/components/FeedbackWidget";
 import { I18nProvider } from "@/components/I18nProvider";
 import { ToastProvider } from "@/components/Toast";
 import { createClient } from "@/lib/supabase/server";
@@ -57,6 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {children}
             </main>
             <Footer />
+            {user ? <FeedbackWidget userId={user.id} /> : null}
           </ToastProvider>
         </I18nProvider>
       </body>

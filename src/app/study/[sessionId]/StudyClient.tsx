@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import RatingButtons from "@/components/RatingButtons";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/Toast";
+import { noteStudySessionCompleted } from "@/components/FeedbackWidget";
 import { calculateNextReview } from "@/lib/sm2";
 import type { StudySession, Topic, Exam, Rating } from "@/lib/supabase/types";
 
@@ -74,6 +75,7 @@ export default function StudyClient({
         })));
       }
       toast(t.toast_success);
+      noteStudySessionCompleted();
       router.push("/dashboard");
       router.refresh();
     } catch (e) {

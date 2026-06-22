@@ -171,4 +171,16 @@ export const uk: Translations = {
   skip_to_content: "Перейти до вмісту",
 
   mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Нд",
+
+  feedback_button: "Відгук",
+  feedback_title: "Як вам користуватися?",
+  feedback_subtitle: "Ваш відгук допомагає нам покращувати Планувальник повторень.",
+  feedback_rate_label: "Оцініть свій досвід",
+  feedback_message_label: "Хочете щось додати? (необов'язково)",
+  feedback_message_placeholder: "Розкажіть, що працює добре, а що можна покращити...",
+  feedback_submit: "Надіслати відгук",
+  feedback_submitting: "Надсилаємо…",
+  feedback_later: "Може пізніше",
+  feedback_thanks: "Дякуємо за відгук!",
+  feedback_star_label: "зірок",
 };

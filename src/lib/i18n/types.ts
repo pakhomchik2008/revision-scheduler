@@ -190,4 +190,17 @@ export interface Translations {
 
   // Weekdays short
   mon: string; tue: string; wed: string; thu: string; fri: string; sat: string; sun: string;
+
+  // Feedback
+  feedback_button: string;
+  feedback_title: string;
+  feedback_subtitle: string;
+  feedback_rate_label: string;
+  feedback_message_label: string;
+  feedback_message_placeholder: string;
+  feedback_submit: string;
+  feedback_submitting: string;
+  feedback_later: string;
+  feedback_thanks: string;
+  feedback_star_label: string;
 }

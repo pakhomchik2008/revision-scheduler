@@ -47,11 +47,21 @@ create table if not exists public.user_settings (
   timezone text not null default 'UTC'
 );
 
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  rating smallint not null check (rating between 1 and 5),
+  message text default '',
+  context text default '',
+  created_at timestamptz not null default now()
+);
+
 -- Row Level Security
 alter table public.exams enable row level security;
 alter table public.topics enable row level security;
 alter table public.study_sessions enable row level security;
 alter table public.user_settings enable row level security;
+alter table public.feedback enable row level security;
 
 create policy "own exams" on public.exams
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -64,3 +74,9 @@ create policy "own sessions" on public.study_sessions
 
 create policy "own settings" on public.user_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "insert own feedback" on public.feedback
+  for insert with check (auth.uid() = user_id);
+
+create policy "read own feedback" on public.feedback
+  for select using (auth.uid() = user_id);

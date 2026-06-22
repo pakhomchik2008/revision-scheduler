@@ -42,3 +42,12 @@ export interface UserSettings {
   include_weekends: boolean;
   timezone: string;
 }
+
+export interface Feedback {
+  id: string;
+  user_id: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  message: string;
+  context: string;
+  created_at: string;
+}
