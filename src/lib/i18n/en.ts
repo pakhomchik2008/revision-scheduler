@@ -171,4 +171,16 @@ export const en: Translations = {
   skip_to_content: "Skip to content",
 
   mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun",
+
+  feedback_button: "Feedback",
+  feedback_title: "How's it going?",
+  feedback_subtitle: "Your feedback helps us improve Revision Scheduler.",
+  feedback_rate_label: "Rate your experience",
+  feedback_message_label: "Anything you'd like to share? (optional)",
+  feedback_message_placeholder: "Tell us what's working or what could be better...",
+  feedback_submit: "Submit feedback",
+  feedback_submitting: "Sending…",
+  feedback_later: "Maybe later",
+  feedback_thanks: "Thanks for your feedback!",
+  feedback_star_label: "stars",
 };

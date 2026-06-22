@@ -171,4 +171,16 @@ export const ru: Translations = {
   skip_to_content: "Перейти к содержимому",
 
   mon: "Пн", tue: "Вт", wed: "Ср", thu: "Чт", fri: "Пт", sat: "Сб", sun: "Вс",
+
+  feedback_button: "Отзыв",
+  feedback_title: "Как вам пользоваться?",
+  feedback_subtitle: "Ваш отзыв помогает нам улучшать Планировщик повторений.",
+  feedback_rate_label: "Оцените свой опыт",
+  feedback_message_label: "Хотите что-то добавить? (необязательно)",
+  feedback_message_placeholder: "Расскажите, что работает хорошо, а что можно улучшить...",
+  feedback_submit: "Отправить отзыв",
+  feedback_submitting: "Отправляем…",
+  feedback_later: "Может позже",
+  feedback_thanks: "Спасибо за отзыв!",
+  feedback_star_label: "звёзд",
 };
